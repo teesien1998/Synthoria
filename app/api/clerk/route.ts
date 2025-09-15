@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   type ClerkUser = {
     id: string;
-    email_addresses?: string | null;
+    email_addresses?: { email_address: string | null }[];
     first_name?: string | null;
     last_name?: string | null;
     image_url?: string | null;
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
   const userData = {
     _id: data.id,
-    email: data.email_addresses[0].email_address,
+    email: data.email_addresses?.[0]?.email_address,
     name: data.first_name + " " + data.last_name,
     image: data.image_url,
   };
