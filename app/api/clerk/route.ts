@@ -1,7 +1,7 @@
 import { Webhook } from "svix";
 import connectDB from "@/config/db";
-import { NextResponse } from "next/server";
 import User from "@/models/User";
+import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 export async function POST(req: Request) {
@@ -10,9 +10,9 @@ export async function POST(req: Request) {
   // Get the headers
   const header = await headers();
   const svixHeaders = {
-    "svix-id": header.get("svix-id"),
-    "svix-timestamp": header.get("svix-timestamp"),
-    "svix-signature": header.get("svix-signature"),
+    "svix-id": header.get("svix-id") ?? "",
+    "svix-timestamp": header.get("svix-timestamp") ?? "",
+    "svix-signature": header.get("svix-signature") ?? "",
   };
 
   // Get the payload
@@ -24,14 +24,11 @@ export async function POST(req: Request) {
   };
 
   // Verify the payload
-  const { data, type } = wh.verify(
-    payload,
-    svixHeaders as any
-  ) as WebhookPayload;
+  const { data, type } = wh.verify(payload, svixHeaders) as WebhookPayload;
 
   const userData = {
     _id: data.id,
-    email: data.email_addresss[0].email_address,
+    email: data.email_addresses[0].email_address,
     name: data.first_name + " " + data.last_name,
     image: data.image_url,
   };

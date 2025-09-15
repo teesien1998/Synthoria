@@ -114,7 +114,7 @@ export default function Home() {
               <h1 className="font-semibold text-4xl">Hi, I'm Synthoria.</h1>
             </div>
             <p className="text-lg text-muted-foreground">
-              Meet Synthoria, your AI assitant. Get support with writing,
+              Meet Synthoria, your AI assistant. Get support with writing,
               planning, brainstorming, and more. Discover the power of
               generative AI.
             </p>
@@ -146,7 +146,7 @@ export default function Home() {
           onSubmit={handleSubmit}
         />
         <p className="text-xs absolute bottom-1 text-gray-500">
-          AI generated maybe make mistakes, for reference only
+          AI-generated responses may make mistakes, for reference only
         </p>
       </div>
     </div>
