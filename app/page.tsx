@@ -111,7 +111,7 @@ export default function Home() {
                 width={60}
                 height={60}
               />
-              <h1 className="font-semibold text-4xl">Hi, I'm Synthoria.</h1>
+              <h1 className="font-semibold text-4xl">{"Hi, I'm Synthoria."}</h1>
             </div>
             <p className="text-lg text-muted-foreground">
               Meet Synthoria, your AI assistant. Get support with writing,

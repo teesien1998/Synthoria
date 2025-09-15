@@ -5,7 +5,15 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 export async function POST(req: Request) {
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
+  const secret = process.env.CLERK_WEBHOOK_SECRET || "";
+  if (!secret) {
+    return NextResponse.json(
+      { error: "Missing CLERK_WEBHOOK_SECRET" },
+      { status: 500 }
+    );
+  }
+
+  const wh = new Webhook(secret);
 
   // Get the headers
   const header = await headers();
@@ -18,9 +26,17 @@ export async function POST(req: Request) {
   // Get the payload
   const payload = await req.text();
 
+  type ClerkUser = {
+    id: string;
+    email_addresses?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    image_url?: string | null;
+  };
+
   type WebhookPayload = {
-    data: any;
-    type: string;
+    data: ClerkUser;
+    type: "user.created" | "user.updated" | "user.deleted" | string;
   };
 
   // Verify the payload
