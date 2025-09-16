@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET || "";
+  // Check if the secret is missing
   if (!secret) {
     return NextResponse.json(
       { error: "Missing CLERK_WEBHOOK_SECRET" },
@@ -13,6 +14,7 @@ export async function POST(req: Request) {
     );
   }
 
+  // Create a new Webhook instance
   const wh = new Webhook(secret);
 
   // Get the headers
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     type: "user.created" | "user.updated" | "user.deleted" | string;
   };
 
-  // Verify the payload
+  // Verify the payload and
   const { data, type } = wh.verify(payload, svixHeaders) as WebhookPayload;
 
   const userData = {
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { message: "Webhook Event Received" },
+    { message: "Webhook Event Recieved" },
     { status: 200 }
   );
 }
