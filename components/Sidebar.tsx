@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import { assets } from "@/public/assets/assets";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { SignedIn, SignedOut, UserButton, useClerk } from "@clerk/nextjs";
 import { useAppContext } from "@/context/AppContext";
 import ChatLabel from "./ChatLabel";
+import NewChatDialog from "./NewChatDialog";
+import { useTheme } from "next-themes";
 
 type SidebarProps = {
   expand: boolean;
@@ -15,15 +17,19 @@ type SidebarProps = {
 };
 
 const Sidebar = ({ expand, setExpand }: SidebarProps) => {
-  const { user } = useAppContext();
+  const { user } = useAppContext() || {};
   const { openSignIn } = useClerk();
   const userButtonRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme } = useTheme();
+
+  const logoSrc =
+    resolvedTheme === "dark" ? assets.synthora_white : assets.synthora_black;
 
   return (
     <div
       className={cn(
-        "bg-muted h-screen hidden md:flex flex-col transition-all duration-300 ease-in-out border-r border-border",
-        expand ? "w-70" : "w-15"
+        "bg-muted dark:bg-[#181818] h-screen hidden md:flex flex-col transition-all duration-300 ease-in-out border-r border-border",
+        expand ? "min-w-70" : "min-w-15"
       )}
     >
       {/* Header Section */}
@@ -41,12 +47,7 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
               width={40}
               height={40}
             />
-            <Image
-              src={assets.synthora_black}
-              alt="Synthora icon"
-              width={155}
-              height={155}
-            />
+            <Image src={logoSrc} alt="Synthora icon" width={155} height={155} />
           </div>
         ) : (
           <button
@@ -65,21 +66,7 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
       </div>
 
       <div className={expand ? "flex-1" : "flex-1 flex flex-col items-center"}>
-        {/* New Chat Button */}
-        <div className={expand ? "px-4 my-4" : "px-0 my-4"}>
-          <button
-            className={cn(
-              "flex space-x-3 items-center bg-transparent shadow-none rounded-lg hover:bg-muted-foreground/5 text-foreground cursor-pointer transition-all duration-200",
-              expand ? "w-full justify-start px-4 py-2" : "p-2.5 justify-center"
-            )}
-            onClick={() => {
-              setExpand(true);
-            }}
-          >
-            <SquarePen className="w-5 h-5" />
-            {expand && <span>New Chat</span>}
-          </button>
-        </div>
+        <NewChatDialog expand={expand} setExpand={setExpand} sidebar={true} />
 
         {/* Search Section */}
         <div className={expand ? "px-4 mb-8" : "px-0 mb-8"}>
@@ -97,7 +84,7 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
             </div>
           ) : (
             <button
-              className="p-2.5 bg-transparent flex items-center justify-center shadow-none rounded-lg hover:bg-muted-foreground/5 text-foreground cursor-pointer transition-all duration-200"
+              className="p-2.5 bg-transparent flex items-center justify-center shadow-none rounded-lg hover:bg-muted-foreground/7 text-foreground cursor-pointer transition-all duration-200"
               onClick={() => {
                 setExpand(true);
               }}
@@ -131,7 +118,7 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
         <SignedOut>
           <div
             className={cn(
-              "flex items-center space-x-3 rounded-lg transition-all duration-200 hover:bg-muted-foreground/5",
+              "flex items-center space-x-3 rounded-lg transition-all duration-200 hover:bg-muted-foreground/7",
               expand ? "w-full px-4 py-2 cursor-pointer" : "cursor-pointer"
             )}
             onClick={() => {
@@ -162,7 +149,7 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
         <SignedIn>
           <div
             className={cn(
-              "flex items-center space-x-3 rounded-lg transition-all duration-200 hover:bg-muted-foreground/5 cursor-pointer",
+              "flex items-center space-x-3 rounded-lg transition-all duration-200 hover:bg-muted-foreground/7 cursor-pointer",
               expand ? "w-full px-4 py-2" : ""
             )}
             onClick={(e) => {

@@ -29,6 +29,7 @@ import anthropic_icon from "./claude-ai-icon.svg";
 import openai_icon from "./chatgpt-icon.svg";
 import meta_icon from "./meta-ai-icon.svg";
 import gemini_icon from "./google-gemini-icon.svg";
+import grok_icon from "./grok-icon.svg";
 
 export const assets = {
   arrow_icon,
@@ -62,4 +63,5 @@ export const assets = {
   openai_icon,
   meta_icon,
   gemini_icon,
+  grok_icon,
 };

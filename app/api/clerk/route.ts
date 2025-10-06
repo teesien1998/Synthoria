@@ -73,7 +73,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { message: "Webhook Event Recieved" },
+    { success: true, message: "Webhook Event Recieved" },
     { status: 200 }
   );
 }

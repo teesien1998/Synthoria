@@ -24,8 +24,19 @@ export type AIModel = {
 
 export const aiModels: AIModel[] = [
   {
-    id: "claude-3.5-sonnet",
-    name: "Claude 3.5 Sonnet",
+    id: "gpt-5",
+    name: "GPT-5",
+    company: "OpenAI",
+    icon: (
+      <Image src={assets.openai_icon} alt="OpenAI" width={17} height={17} />
+    ),
+    color: "openai",
+    description: "Advanced multimodal AI model",
+    features: ["Multimodal", "Fast", "Creative"],
+  },
+  {
+    id: "claude-sonnet-4",
+    name: "Claude Sonnet 4",
     company: "Anthropic",
     icon: (
       <Image
@@ -39,35 +50,33 @@ export const aiModels: AIModel[] = [
     description: "Most capable model for complex reasoning",
     features: ["Reasoning", "Analysis", "Coding"],
   },
+  // {
+  //   id: "llama-3.1",
+  //   name: "Llama 3.1",
+  //   company: "Meta",
+  //   icon: <Image src={assets.meta_icon} alt="Meta" width={16} height={16} />,
+  //   color: "meta",
+  //   description: "Open source powerhouse",
+  //   features: ["Open Source", "Efficient", "Versatile"],
+  // },
   {
-    id: "gpt-4o",
-    name: "GPT-4o",
-    company: "OpenAI",
-    icon: (
-      <Image src={assets.openai_icon} alt="OpenAI" width={17} height={17} />
-    ),
-    color: "openai",
-    description: "Advanced multimodal AI model",
-    features: ["Multimodal", "Fast", "Creative"],
-  },
-  {
-    id: "llama-3.1",
-    name: "Llama 3.1",
-    company: "Meta",
-    icon: <Image src={assets.meta_icon} alt="Meta" width={16} height={16} />,
-    color: "meta",
-    description: "Open source powerhouse",
-    features: ["Open Source", "Efficient", "Versatile"],
-  },
-  {
-    id: "gemini-1.5-pro",
-    name: "Gemini 1.5 Pro",
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
     company: "Google",
     icon: (
       <Image src={assets.gemini_icon} alt="Gemini" width={16} height={16} />
     ),
     color: "gemini",
     description: "Google's most capable AI model",
+    features: ["Long Context", "Multimodal", "Fast"],
+  },
+  {
+    id: "grok-4",
+    name: "Grok 4",
+    company: "XAI",
+    icon: <Image src={assets.grok_icon} alt="Grok" width={16} height={16} />,
+    color: "grok",
+    description: "XAI's most capable AI model",
     features: ["Long Context", "Multimodal", "Fast"],
   },
 ];
@@ -87,7 +96,7 @@ const ModelSelector = ({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 px-2 gap-1.5 border hover:cursor-pointer"
+          className="h-8 px-2 gap-1.5 border border-border cursor-pointer bg-white dark:bg-[#252525] hover:dark:bg-[#303030] dark:border-[#383838]"
         >
           {selectedModel.icon}
           <span className="hidden sm:inline text-xs font-medium">

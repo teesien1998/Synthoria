@@ -14,15 +14,35 @@ import {
 } from "@clerk/nextjs";
 import { useAppContext } from "@/context/AppContext";
 import ChatLabel from "./ChatLabel";
+import { useEffect, useRef, useState } from "react";
+import NewChatDialog from "./NewChatDialog";
 
 const NavDrawer = () => {
   const { user } = useAppContext();
   const { openSignIn, openUserProfile } = useClerk();
+  const userButtonRef = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState<boolean>(false);
+
+  // Auto-close NavDrawer when >= md
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+
+    // Initial check
+    if (media.matches) setOpen(false);
+
+    // Add event listener for resize
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setOpen(false);
+    };
+
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
 
   return (
-    <Sheet>
-      <SheetTrigger>
-        <HiOutlineMenuAlt1 className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-pointer" />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger className="group p-3 rounded-lg hover:bg-muted-foreground/7 text-foreground cursor-pointer transition-all duration-200">
+        <HiOutlineMenuAlt1 className="w-5 h-5 text-muted-foreground group-hover:text-foreground cursor-pointer" />
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] p-0 bg-muted border-r">
         {/* Header Section */}
@@ -47,12 +67,7 @@ const NavDrawer = () => {
         {/* Body */}
         <div className="flex-1">
           {/* New Chat Button */}
-          <div className="px-4 my-4">
-            <button className="flex w-full space-x-3 items-center bg-transparent shadow-none rounded-lg hover:bg-muted-foreground/5 text-foreground cursor-pointer transition-all duration-200 justify-start px-4 py-2">
-              <SquarePen className="w-5 h-5" />
-              <span>New Chat</span>
-            </button>
-          </div>
+          <NewChatDialog expand={true} sidebar={true} />
 
           {/* Search */}
           <div className="px-4 mb-8">
@@ -71,7 +86,7 @@ const NavDrawer = () => {
             <div className="text-sm text-muted-foreground uppercase tracking-wider mb-3 font-medium">
               Recent Chats
             </div>
-            <ChatLabel />
+            <ChatLabel onChatSelect={() => setOpen(false)} />
           </div>
         </div>
 
@@ -79,7 +94,7 @@ const NavDrawer = () => {
         <div className="px-4 py-3 border-t-[1.4px] border-border space-y-3 flex items-center justify-center">
           <SignedOut>
             <div
-              className="w-full flex items-center space-x-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-muted-foreground/5 px-4 py-2"
+              className="w-full flex items-center space-x-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-muted-foreground/7 px-4 py-2"
               onClick={() => openSignIn()}
             >
               <Avatar className="h-8 w-8">
@@ -100,10 +115,23 @@ const NavDrawer = () => {
           </SignedOut>
           <SignedIn>
             <div
-              className="w-full flex items-center space-x-3 rounded-lg px-4 py-2 hover:bg-muted-foreground/5 transition-all duration-200 cursor-pointer"
-              onClick={() => openUserProfile()}
+              className="w-full flex items-center space-x-3 rounded-lg px-4 py-2 hover:bg-muted-foreground/7 transition-all duration-200 cursor-pointer"
+              onClick={() => {
+                const userButton =
+                  userButtonRef.current?.querySelector("button");
+                if (userButton) {
+                  userButton.click();
+                }
+              }}
             >
-              <UserButton />
+              <div
+                ref={userButtonRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <UserButton />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate text-foreground transition-colors">
                   {user?.fullName ||
