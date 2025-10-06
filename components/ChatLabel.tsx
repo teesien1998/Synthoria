@@ -250,7 +250,7 @@ const ChatLabel = ({ onChatSelect }: { onChatSelect?: () => void }) => {
             <DialogTitle>Are you absolutely sure?</DialogTitle>
             <DialogDescription>
               This action cannot be undone. This will permanently delete the
-              chat "{chatToDelete?.name}" and remove all its messages.
+              chat &quot;{chatToDelete?.name}&quot; and remove all its messages.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

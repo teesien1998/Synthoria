@@ -105,7 +105,7 @@ const Message = ({
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code: CodeBlock as any,
+                  code: CodeBlock as React.ComponentType<any>,
                   h1: (p) => (
                     <h1 className="text-2xl font-semibold my-4" {...p} />
                   ),
