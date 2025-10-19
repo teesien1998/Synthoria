@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { assets } from "@/public/assets/assets";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,14 +21,21 @@ const Sidebar = ({ expand, setExpand }: SidebarProps) => {
   const { openSignIn } = useClerk();
   const userButtonRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const logoSrc =
-    resolvedTheme === "dark" ? assets.synthora_white : assets.synthora_black;
+    mounted && resolvedTheme === "dark"
+      ? assets.synthora_white
+      : assets.synthora_black;
 
   return (
     <div
       className={cn(
-        "bg-muted dark:bg-[#181818] h-screen hidden md:flex flex-col transition-all duration-300 ease-in-out border-r border-border",
+        "bg-muted dark:bg-[#181818] h-screen hidden md:flex flex-col transition-[min-width] duration-200 ease-out border-r border-border",
         expand ? "min-w-70" : "min-w-15"
       )}
     >

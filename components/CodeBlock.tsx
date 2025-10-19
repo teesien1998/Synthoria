@@ -37,7 +37,7 @@ const CodeBlock = ({
 
   if (inline) {
     return (
-      <code className="px-1 py-0.5 rounded bg-muted text-foreground">
+      <code className="px-1 py-0.5 rounded-sm bg-muted-foreground/12 dark:bg-[#383838] text-foreground">
         {children}
       </code>
     );
@@ -46,11 +46,11 @@ const CodeBlock = ({
   const text = String(children ?? "");
 
   return (
-    <div className="relative group">
+    <div className="relative group w-full">
       {/* <div className="text-sm text-foreground/50 absolute top-2 left-2 px-2">
         {lang}
       </div> */}
-      <pre className={`language-${lang} rounded-lg overflow-auto`}>
+      <pre className={`language-${lang} rounded-lg overflow-auto w-full !my-0`}>
         <div
           className={`flex pb-4 ${lang ? "justify-between" : "justify-end"}`}
         >

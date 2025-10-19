@@ -27,6 +27,8 @@ type MessageProps = {
   model: string | undefined;
   timestamp: Date;
   isError?: boolean;
+  reasoning?: string;
+  reasoningDurationMs?: number;
 };
 
 type Chat = {
@@ -88,6 +90,7 @@ const ChatLabel = ({ onChatSelect }: { onChatSelect?: () => void }) => {
           const updatedChats = prevChats.map((c) =>
             c._id === renamed._id ? renamed : c
           );
+
           // Sort by updatedAt descending (most recent first)
           return updatedChats.sort(
             (a, b) =>
@@ -225,8 +228,9 @@ const ChatLabel = ({ onChatSelect }: { onChatSelect?: () => void }) => {
               </Button>
               <Button
                 type="submit"
+                variant="default"
                 disabled={isRenaming || !chatName.trim()}
-                className="bg-custom/90 hover:bg-custom cursor-pointer transition-all duration-200"
+                className="cursor-pointer transition-all duration-200"
               >
                 {isRenaming ? (
                   // Show a spinning loader icon when renaming

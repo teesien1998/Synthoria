@@ -27,6 +27,8 @@ type MessageProps = {
   model: string | undefined;
   timestamp: Date;
   isError?: boolean;
+  reasoning?: string;
+  reasoningDurationMs?: number;
 };
 
 type Chat = {

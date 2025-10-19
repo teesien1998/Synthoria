@@ -7,8 +7,6 @@ import ModelSelector from "./ModelSelector";
 import { aiModels, AIModel } from "./ModelSelector";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "sonner";
-import axios from "axios";
-import { ConnectorOutSerializer } from "svix/dist/models/connectorOut";
 
 type PromptBoxProps = {
   placeholder?: string;
@@ -21,6 +19,8 @@ type MessageProps = {
   model: string | undefined;
   timestamp: Date;
   isError?: boolean;
+  reasoning?: string;
+  reasoningDurationMs?: number;
 };
 
 type Chat = {
@@ -36,7 +36,7 @@ const PromptBox = ({
   placeholder = "Message Synthoria…",
   disabled = false,
 }: PromptBoxProps) => {
-  const [selectedModel, setSelectedModel] = useState<AIModel>(aiModels[0]);
+  const [selectedModel, setSelectedModel] = useState<AIModel>(aiModels[1]);
   const [prompt, setPrompt] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const {
@@ -47,7 +47,7 @@ const PromptBox = ({
     setSelectedChat,
     isLoading,
     setIsLoading,
-  } = useAppContext() || {};
+  } = useAppContext();
 
   // Auto-resize the textarea to fit content
   useEffect(() => {
@@ -63,27 +63,34 @@ const PromptBox = ({
     const trimmed = prompt.trim();
     if (!trimmed || isLoading || disabled) return;
 
+    const currentPrompt = prompt; // Save prompt before clearing
+    setPrompt(""); // Clear prompt immediately after submission
+
     try {
       if (!user) return toast.error("Login to send message");
 
       setIsLoading(true);
-      setPrompt(""); // Clear prompt immediately after submission
 
       const userPrompt: MessageProps = {
         role: "user",
-        content: prompt,
+        content: currentPrompt,
         model: selectedModel.id,
         timestamp: new Date(),
       };
 
       // Update the chats with the new user prompt
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
+      setChats((prevChats) => {
+        const updatedChats = prevChats.map((chat) =>
           chat._id === selectedChat?._id
             ? { ...chat, messages: [...chat.messages, userPrompt] }
             : chat
-        )
-      );
+        );
+
+        return updatedChats.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+      });
 
       // Update the selected chat with the new user prompt
       setSelectedChat((prevChat) =>
@@ -95,80 +102,155 @@ const PromptBox = ({
           : null
       );
 
-      const { data } = await axios.post("/api/chat/ai", {
-        chatId: selectedChat?._id,
-        content: prompt,
-        model: selectedModel.id,
+      // Start streaming
+      const res = await fetch("/api/chat/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: selectedChat?._id,
+          content: currentPrompt,
+          model: selectedModel.id,
+        }),
       });
 
-      if (data.success) {
-        // 1) Stop loader so typing is visible
-        setIsLoading(false);
-
-        // 2) Update the chats with the new ai message
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat._id === selectedChat?._id
-              ? { ...chat, messages: [...chat.messages, data.message] }
-              : chat
-          )
-        );
-
-        // 3) Update the selected chat with the new ai message
-        const aiMessage: MessageProps = {
-          role: "assistant",
-          content: "",
-          model: selectedModel.id,
-          timestamp: new Date(),
-        };
-
-        setSelectedChat((prevChat) =>
-          prevChat
-            ? { ...prevChat, messages: [...prevChat.messages, aiMessage] }
-            : null
-        );
-
-        // 4) Typing animation (no direct push of data.message)
-        const messageArray = data.message.content.split(" ");
-
-        for (let i = 0; i < messageArray.length; i++) {
-          setTimeout(() => {
-            aiMessage.content = messageArray.slice(0, i + 1).join(" ");
-
-            setSelectedChat((prevChat) => {
-              if (!prevChat) return null;
-
-              const updateMessage = [
-                ...prevChat?.messages?.slice(0, -1),
-                aiMessage,
-              ];
-
-              return { ...prevChat, messages: updateMessage };
-            });
-          }, 500);
-        }
-      } else {
-        const errorMessage: MessageProps = {
-          role: "assistant",
-          content: data.error,
-          model: selectedModel.id,
-          timestamp: new Date(),
-          isError: true,
-        };
-
-        setSelectedChat((prevChat) =>
-          prevChat
-            ? { ...prevChat, messages: [...prevChat.messages, errorMessage] }
-            : null
-        );
-
-        toast.error(data.error);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || res.statusText);
       }
+
+      // Add a blank assistant message we'll update live
+      const aiMessage: MessageProps = {
+        role: "assistant",
+        content: "",
+        model: selectedModel.id,
+        timestamp: new Date(),
+        reasoning: "",
+        reasoningDurationMs: undefined,
+      };
+
+      setSelectedChat((prev) =>
+        prev ? { ...prev, messages: [...prev.messages, aiMessage] } : null
+      );
+
+      setIsLoading(false); // Stop loading to show streaming content
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+
+      let answerAccum = "";
+      let reasoningAccum = "";
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        for (const line of chunk.split("\n")) {
+          const sseline = line.trim();
+          if (!sseline) continue;
+          if (sseline.startsWith(":")) continue; // ignore SSE comments
+          if (!sseline.startsWith("data:")) continue;
+
+          const payload = sseline.slice(5).trim();
+          if (payload === "[DONE]") break;
+
+          try {
+            const evt = JSON.parse(payload) as
+              | { type: "reasoning"; delta: string }
+              | { type: "answer"; delta: string }
+              | { type: "reasoning_duration"; durationMs: number }
+              | { type: "error"; error: unknown };
+
+            if (evt.type === "error") {
+              toast.error(String(evt.error));
+
+              // Update the message to show as error
+              setSelectedChat((prev) => {
+                if (!prev) return null;
+                const msgs = [...prev.messages];
+                for (let i = msgs.length - 1; i >= 0; i--) {
+                  if (msgs[i].role === "assistant") {
+                    msgs[i] = {
+                      ...msgs[i],
+                      content: String(evt.error),
+                      isError: true,
+                    };
+                    break;
+                  }
+                }
+                return { ...prev, messages: msgs };
+              });
+              break; // Stop processing the stream on error
+            }
+
+            if (evt.type === "reasoning_duration") {
+              setSelectedChat((prev) => {
+                if (!prev) return null;
+                const msgs = [...prev.messages];
+                for (let i = msgs.length - 1; i >= 0; i--) {
+                  if (msgs[i].role === "assistant") {
+                    msgs[i] = {
+                      ...msgs[i],
+                      reasoningDurationMs: evt.durationMs,
+                    };
+                    break;
+                  }
+                }
+                return { ...prev, messages: msgs };
+              });
+              continue;
+            }
+
+            if (evt.type === "reasoning") {
+              reasoningAccum += evt.delta;
+
+              setSelectedChat((prev) => {
+                if (!prev) return null;
+                const msgs = [...prev.messages];
+                for (let i = msgs.length - 1; i >= 0; i--) {
+                  if (msgs[i].role === "assistant") {
+                    msgs[i] = {
+                      ...msgs[i],
+                      reasoning: reasoningAccum,
+                    };
+                    break;
+                  }
+                }
+                return { ...prev, messages: msgs };
+              });
+              continue;
+            }
+
+            if (evt.type === "answer") {
+              answerAccum += evt.delta;
+              setSelectedChat((prev) => {
+                if (!prev) return null;
+                const msgs = [...prev.messages];
+                for (let i = msgs.length - 1; i >= 0; i--) {
+                  if (msgs[i].role === "assistant") {
+                    msgs[i] = { ...msgs[i], content: answerAccum };
+                    break;
+                  }
+                }
+                return { ...prev, messages: msgs };
+              });
+            }
+          } catch {
+            // ignore non-JSON payloads
+          }
+        }
+      }
+
+      // Note: No need to update chats here - the message is already saved to DB and
+      // the streaming updates have already updated the UI in real-time
     } catch (error) {
-      const errorReturnMessage = axios.isAxiosError(error)
-        ? error.response?.data?.error ||
-          "Error fetching AI response. Please try again."
-        : "Error fetching AI response. Please try again.";
+      const errorReturnMessage =
+        error instanceof Error
+          ? error.message
+          : "Error fetching AI response. Please try again.";
 
       const errorMessage: MessageProps = {
         role: "assistant",
@@ -236,7 +318,7 @@ const PromptBox = ({
               placeholder={placeholder}
               className={cn(
                 "flex-1 resize-none bg-transparent outline-none placeholder:text-muted-foreground/70",
-                "text-base leading-7"
+                "text-lg leading-7"
               )}
               disabled={disabled}
             />

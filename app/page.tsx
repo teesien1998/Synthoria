@@ -18,7 +18,6 @@ export default function Home() {
   const [expand, setExpand] = useState<boolean>(false);
   const [isMdScreen, setIsMdScreen] = useState<boolean>(true);
   const { selectedChat, setSelectedChat, isLoading } = useAppContext();
-  const bottomRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
 
   const logoSrc =
@@ -38,10 +37,23 @@ export default function Home() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Smooth scroll to bottom whenever a new message arrives
+  // Smooth scroll to absolute bottom whenever messages change or are streaming
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedChat?.messages.length]);
+    // Use setTimeout to ensure DOM is fully updated
+    setTimeout(() => {
+      // Scroll to the very bottom, accounting for the margin-bottom of the last message
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+
+      // Add extra space to account for margin-bottom of last message
+      const targetScroll = scrollHeight - clientHeight + 32; // 50px extra buffer
+
+      window.scrollTo({
+        top: targetScroll,
+        behavior: "smooth",
+      });
+    }, 0);
+  }, [selectedChat?.messages, isLoading]);
 
   return (
     <div className="flex min-h-screen">
@@ -52,14 +64,14 @@ export default function Home() {
 
       {/* Main content area with left margin for sidebar */}
       <div
-        className="flex-1 flex flex-col relative "
+        className="flex-1 flex flex-col relative transition-[margin-left] duration-200 ease-out"
         style={{
           marginLeft: isMdScreen ? (expand ? "280px" : "60px") : "0px",
         }}
       >
         {/* Fixed Header */}
         <div
-          className="fixed top-0 z-20 flex items-center justify-between px-4 h-14 md:py-2 border-b-1 md:border-none shadow-xs md:shadow-none bg-white/40 backdrop-blur-lg dark:bg-[#212121]/40"
+          className="fixed top-0 z-20 flex items-center justify-between px-4 h-14 md:py-2 border-b-1 md:border-none shadow-xs md:shadow-none bg-white/40 backdrop-blur-lg dark:bg-[#212121]/40 transition-[left] duration-200 ease-out"
           style={{
             left: isMdScreen ? (expand ? "280px" : "60px") : "0px",
             right: 0,
@@ -85,7 +97,7 @@ export default function Home() {
         </div>
 
         {/* Scrollable content area */}
-        <div className="pt-14 pb-32 flex-1 flex justify-center dark:bg-[#212121]">
+        <div className="pt-14 pb-[166px] flex-1 flex justify-center dark:bg-[#212121]">
           {!selectedChat?.messages || selectedChat.messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 text-center max-w-5xl px-4 ">
               <div className="flex items-center gap-3">
@@ -110,7 +122,6 @@ export default function Home() {
               {selectedChat?.messages.map((message, idx) => (
                 <Message isLoading={false} key={idx} message={message} />
               ))}
-              <div ref={bottomRef} />
               {isLoading && (
                 <Message
                   isLoading={true}
@@ -131,7 +142,7 @@ export default function Home() {
 
         {/* Fixed PromptBox */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-20"
+          className="fixed bottom-0 left-0 right-0 z-20 transition-[left] duration-200 ease-out"
           style={{
             left: isMdScreen ? (expand ? "280px" : "60px") : "0px",
           }}
